@@ -1,6 +1,4 @@
 package com.olegovichhh.audioconverter
-import dev.kotlinds.fluidsynthkmp.AudioConfig
-import dev.kotlinds.fluidsynthkmp.FluidSynthPlayer
 import java.io.*
 import kotlin.math.*
 
@@ -18,12 +16,12 @@ object MidiRenderer {
       when(hi){0x80->ev+=E(tick,1,ch,a,b);0x90->ev+=E(tick,if(b==0)1 else 0,ch,a,b);0xC0->ev+=E(tick,2,ch,a)}}}
    };p=end
   }
-  ev.sortWith(compareBy<E>{it.tick}.thenBy{it.type});val synth=FluidSynthPlayer(AudioConfig(sampleRate=sr));require(synth.loadSoundFont(sf2.absolutePath)>=0){"Не удалось загрузить SoundFont"}
+  ev.sortWith(compareBy<E>{it.tick}.thenBy{it.type});val synth=OfflineSynth(sr);require(synth.load(sf2.absolutePath)>=0){"Не удалось загрузить SoundFont"}
   val fos=BufferedOutputStream(FileOutputStream(wav),262144);fos.write(ByteArray(44));var pcmBytes=0L;var last=0L;var tempo=500000;val maxTick=(ev.lastOrNull()?.tick?:1L).coerceAtLeast(1L);var lastPct=-1
-  fun audioTo(t:Long){val dt=t-last;if(dt<=0)return;val raw=dt.toDouble()*tempo*sr/(ppq*1_000_000.0);require(raw<sr*60.0*30){"Слишком большой разрыв между MIDI-событиями"};var frames=raw.roundToInt();while(frames>0){val n=min(8192,frames);val a=synth.renderFloat(n);val bb=ByteArray(a.size*2);var j=0;for(x in a){val q=(x.coerceIn(-1f,1f)*32767f).roundToInt();bb[j++]=(q and 255).toByte();bb[j++]=((q shr 8)and 255).toByte()};fos.write(bb);pcmBytes+=bb.size;frames-=n};last=t}
-  for(e in ev){audioTo(e.tick);when(e.type){0->synth.noteOn(e.ch,e.a,e.b);1->synth.noteOff(e.ch,e.a);2->synth.programChange(e.ch,e.a);3->tempo=e.tempo};val pct=(e.tick*95/maxTick).toInt();if(pct!=lastPct){lastPct=pct;onProgress(pct)}}
-  for(e in ev){audioTo(e.tick);when(e.type){0->synth.noteOn(e.ch,e.a,e.b);1->synth.noteOff(e.ch,e.a);2->synth.programChange(e.ch,e.a);3->tempo=e.tempo}}
-  var tail=sr*2;while(tail>0){val n=min(8192,tail);val a=synth.renderFloat(n);val bb=ByteArray(a.size*2);var j=0;for(x in a){val q=(x.coerceIn(-1f,1f)*32767f).roundToInt();bb[j++]=(q and 255).toByte();bb[j++]=((q shr 8)and 255).toByte()};fos.write(bb);pcmBytes+=bb.size;tail-=n};fos.flush();fos.close();synth.close();patchWav(wav,pcmBytes,sr);onProgress(100)
+  fun audioTo(t:Long){val dt=t-last;if(dt<=0)return;val raw=dt.toDouble()*tempo*sr/(ppq*1_000_000.0);require(raw<sr*60.0*30){"Слишком большой разрыв между MIDI-событиями"};var frames=raw.roundToInt();while(frames>0){val n=min(8192,frames);val a=synth.render(n);val bb=ByteArray(a.size*2);var j=0;for(x in a){val q=(x.coerceIn(-1f,1f)*32767f).roundToInt();bb[j++]=(q and 255).toByte();bb[j++]=((q shr 8)and 255).toByte()};fos.write(bb);pcmBytes+=bb.size;frames-=n};last=t}
+  for(e in ev){audioTo(e.tick);when(e.type){0->synth.noteOn(e.ch,e.a,e.b);1->synth.noteOff(e.ch,e.a);2->synth.program(e.ch,e.a);3->tempo=e.tempo};val pct=(e.tick*95/maxTick).toInt();if(pct!=lastPct){lastPct=pct;onProgress(pct)}}
+  for(e in ev){audioTo(e.tick);when(e.type){0->synth.noteOn(e.ch,e.a,e.b);1->synth.noteOff(e.ch,e.a);2->synth.program(e.ch,e.a);3->tempo=e.tempo}}
+  var tail=sr*2;while(tail>0){val n=min(8192,tail);val a=synth.render(n);val bb=ByteArray(a.size*2);var j=0;for(x in a){val q=(x.coerceIn(-1f,1f)*32767f).roundToInt();bb[j++]=(q and 255).toByte();bb[j++]=((q shr 8)and 255).toByte()};fos.write(bb);pcmBytes+=bb.size;tail-=n};fos.flush();fos.close();synth.close();patchWav(wav,pcmBytes,sr);onProgress(100)
  }
  private fun i32(b:ByteArray,p:Int)=((b[p].toInt()and 255)shl 24)or((b[p+1].toInt()and 255)shl 16)or((b[p+2].toInt()and 255)shl 8)or(b[p+3].toInt()and 255)
  private fun vlq(b:ByteArray,s:Int):Pair<Long,Int>{var p=s;var v=0L;do{val x=b[p++].toInt()and 255;v=(v shl 7)or(x and 127).toLong()}while(x and 128!=0);return v to p}
