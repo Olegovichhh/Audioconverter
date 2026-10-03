@@ -4,6 +4,7 @@ android {
  defaultConfig { applicationId = "com.olegovichhh.audioconverter"; minSdk = 26; targetSdk = 35; versionCode = 1; versionName = "1.0" }
  compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
  kotlinOptions { jvmTarget = "17" }
+ packaging { jniLibs { pickFirsts += setOf("lib/*/libc++_shared.so") } }
 }
 dependencies {
  implementation("androidx.core:core-ktx:1.15.0")
