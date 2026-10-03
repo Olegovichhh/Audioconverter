@@ -12,7 +12,7 @@ object MidiRenderer {
   val ev=mutableListOf<E>(); var p=14
   while(p+8<=bytes.size&&String(bytes,p,4)=="MTrk"){val len=i32(bytes,p+4);val end=p+8+len;p+=8;var tick=0L;var run=0
    while(p<end){val(v,np)=vlq(bytes,p);p=np;tick+=v;var st=bytes[p].toInt() and 255;if(st<128)st=run else{p++;if(st<240)run=st}
-    when{st==0xFF->{val mt=bytes[p++].toInt() and 255;val(l,n)=vlq(bytes,p);p=n;if(mt==0x51&&l==3){val t=((bytes[p].toInt()and 255)shl 16)or((bytes[p+1].toInt()and 255)shl 8)or(bytes[p+2].toInt()and 255);ev+=E(tick,3,tempo=t)};p+=l.toInt()}
+    when{st==0xFF->{val mt=bytes[p++].toInt() and 255;val(l,n)=vlq(bytes,p);p=n;if(mt==0x51&&l==3L){val t=((bytes[p].toInt()and 255)shl 16)or((bytes[p+1].toInt()and 255)shl 8)or(bytes[p+2].toInt()and 255);ev+=E(tick,3,tempo=t)};p+=l.toInt()}
      st==0xF0||st==0xF7->{val(l,n)=vlq(bytes,p);p=n+l.toInt()}
      else->{val hi=st and 0xF0;val ch=st and 15;val a=bytes[p++].toInt()and 255;val b=if(hi==0xC0||hi==0xD0)0 else bytes[p++].toInt()and 255
       when(hi){0x80->ev+=E(tick,1,ch,a,b);0x90->ev+=E(tick,if(b==0)1 else 0,ch,a,b);0xC0->ev+=E(tick,2,ch,a)}}}
