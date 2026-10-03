@@ -19,7 +19,7 @@ jobs:
           test $(stat -c%s app/src/main/assets/default.sf2) -gt 30000000
       - name: Prepare FluidSynth native SDK
         run: |
-          for ABI in arm64-v8a armeabi-v7a x86 x86_64; do
+          for ABI in arm64-v8a armeabi-v7a; do
             mkdir -p app/src/main/jniLibs/$ABI
             curl -fL --retry 3 "https://raw.githubusercontent.com/kotlinds/fluidsynth-kmp/main/fluidsynth-kmp/src/androidMain/jniLibs/$ABI/libfluidsynth.so" -o app/src/main/jniLibs/$ABI/libfluidsynth.so
           done
