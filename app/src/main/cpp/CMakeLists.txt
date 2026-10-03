@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.22)
+project(offline_synth_jni C)
+add_library(offline_synth_jni SHARED offline_synth_jni.c)
+add_library(fluidsynth SHARED IMPORTED)
+set_target_properties(fluidsynth PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/${ANDROID_ABI}/libfluidsynth.so)
+target_link_libraries(offline_synth_jni fluidsynth)
